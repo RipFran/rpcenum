@@ -2,7 +2,7 @@
 
 Rpcenum es una herramienta de línea de comandos, originalmente desarrollada por s4vitar, que permite la **enumeración de información de dominio** en sistemas Windows **mediante** el protocolo **RPC** (Remote Procedure Call). 
 
-En su versión original, permitía la enumeración utilizando una sesión de invitado si la máquina objetivo lo permitía. Sin embargo, se ha ampliado su funcionamiento para incluir la autenticación mediante credenciales de usuario válidas, proporcionando así una mayor flexibilidad y capacidad de adaptación a diferentes entornos y restricciones de seguridad implementadas en los sistemas que se están examinando.
+En su versión original, permitía la enumeración utilizando un *Null Session* (sin autenticación) si la máquina objetivo lo permitía. Sin embargo, se ha ampliado su funcionamiento para incluir la autenticación mediante credenciales de usuario válidas, proporcionando así una mayor flexibilidad y capacidad de adaptación a diferentes entornos y restricciones de seguridad implementadas en los sistemas que se están examinando.
 
 Esta utilidad nos **permitirá obtener la siguiente información** de un dominio:
 
@@ -28,11 +28,11 @@ Su **funcionamiento** es el siguiente:
 
 * **Modo** de enumeración (opción -e): Se debe proporcionar el modo de enumeración que se desee utilizar.
 * Dirección **IP** del host (opción -i): Proporciona la dirección IP del host que deseas enumerar.
-* Uso de sesión de **invitado** **o autenticación** (opciones -N, -u, y -p):
-	* Para utilizar una sesión de invitado (sin autenticación), utiliza la opción -N.
+* Uso de sesión **nula** **o autenticación** (opciones -N, -u, y -p):
+	* Para utilizar una sesión nula (sin autenticación), utiliza la opción -N.
 	* Si deseas usar credenciales de usuario, proporciona el nombre de usuario con la opción -u y la contraseña con la opción -p.
 
-La herramienta verifica que se haya proporcionado la dirección IP del host y el modo de enumeración. Además, comprueba si se ha especificado una sesión de invitado o se han proporcionado credenciales de usuario válidas.
+La herramienta verifica que se haya proporcionado la dirección IP del host y el modo de enumeración. Además, comprueba si se ha especificado una sesión nula o se han proporcionado credenciales de usuario válidas.
 
 El modo de enumeración **DUsers**, nos permitirá obtener un listado de los usuarios existentes en el dominio. En este caso nos conectaremos al servicio utilizando las credenciales de dominio *fcarot:Password1*:
 
