@@ -2,7 +2,13 @@
 
 Rpcenum es una herramienta de línea de comandos, originalmente desarrollada por s4vitar, que permite la **enumeración de información de dominio** en sistemas Windows **mediante** el protocolo **RPC** (Remote Procedure Call). 
 
-En su versión original, permitía la enumeración utilizando un *Null Session* (sin autenticación) si la máquina objetivo lo permitía. Sin embargo, se ha ampliado su funcionamiento para incluir la autenticación mediante credenciales de usuario válidas, proporcionando así una mayor flexibilidad y capacidad de adaptación a diferentes entornos y restricciones de seguridad implementadas en los sistemas que se están examinando.
+En su versión original, permitía la enumeración utilizando un *Null Session* (sin autenticación) si la máquina objetivo lo permitía. Sin embargo, se ha ampliado su funcionamiento para **incluir la autenticación mediante credenciales** de usuario válidas, proporcionando así una mayor flexibilidad y capacidad de adaptación a diferentes entornos y restricciones de seguridad implementadas en los sistemas que se están examinando.
+
+Además de las funcionalidades descritas anteriormente, Rpcenum también ha sido actualizada con nuevas características. En particular, se han añadido **barras de progreso** para todos los modos de enumeración, lo que puede ayudar a los usuarios a estimar mejor el tiempo necesario para completar el proceso y a tener una idea de cómo avanza la enumeración en tiempo real.
+
+Además, se han agregado dos nuevos modos de enumeración: **DUsersbyGroup** y **DGroupsbyUser**. **El primero** de ellos muestra los **grupos del dominio y los usuarios** que pertenecen a cada uno de ellos.
+
+Por otro lado, el segundo modo, **DGroupsbyUser**, muestra los **usuarios y los grupos a los que pertenecen**, lo que puede ser de ayuda para analizar cómo se han organizado los usuarios en diferentes grupos y cómo se han establecido los permisos y las políticas de seguridad en el sistema.
 
 Esta utilidad nos **permitirá obtener la siguiente información** de un dominio:
 
@@ -10,6 +16,8 @@ Esta utilidad nos **permitirá obtener la siguiente información** de un dominio
 * Usuarios del dominio con información
 * Usuarios administradores del dominio
 * Grupos del dominio
+* Grupos del dominio y usuarios que pertenecen a ellos.
+* Usuarios del dominio y grupos a los que pretenecen.
 
 ¿Cómo funciona?
 ======
@@ -21,7 +29,6 @@ La ejecución de la herramienta mostrará el siguiente panel de ayuda:
 		alt="Panel de ayuda"
 	style="float: left; margin-right: 10px;" />
 </p>
-
 
 
 Su **funcionamiento** es el siguiente:
@@ -42,7 +49,7 @@ El modo de enumeración **DUsers**, nos permitirá obtener un listado de los usu
 	style="float: left; margin-right: 10px;" />
 </p>
 
-El modo de enumeración **DUsersInfo**, nos permitirá obtener un listado de los usuarios existentes en el dominio con descripción, pudiendo así identificar a usuarios potenciales:
+El modo de enumeración **DUsersInfo**, nos permitirá obtener un listado de los usuarios existentes en el dominio con descripción, pudiendo así identificar a usuarios potenciales. En este ejemplo se utilizará un *Null Session* (sin autenticación):
 
 <p align="center">
     <img src="images/image3.png"
@@ -66,4 +73,33 @@ El modo de enumeración **DGroups**, nos permitirá obtener un listado de los gr
     style="float: left; margin-right: 10px;" />
 </p>
 
+
+El modo de enumeración **DUsersbyGroup**, nos permitirá obtener un listado de los grupos existentes del dominio y de los usuarios pertenecientes a cada grupo.
+
+<p align="center">
+    <img src="images/image6.png"
+        alt="DUsersInfo"
+    style="float: left; margin-right: 10px;" />
+</p>
+
+El modo de enumeración **DGroupsbyUser**, nos permitirá obtener un listado de los usuarios del dominio y de los grupos a los cuales pertenecen.
+
+<p align="center">
+    <img src="images/image7.png"
+        alt="DUsersInfo"
+    style="float: left; margin-right: 10px;" />
+</p>
+
 Por último, el modo de enumeración **All**, nos efectuará todas las enumeraciones de forma simultánea, pudiendo así visualizar la información más relevante del dominio.
+
+
+Ejemplos de uso
+======
+
+```bash
+sudo ./rpcenum -i 192.168.88.156 -u 'fcarot' -p 'Password1' -e DUsers
+sudo ./rpcenum -i 192.168.88.156 -u 'fcarot' -p 'Password1' -e DUsersInfo
+sudo ./rpcenum -N -i 10.10.10.169 -e DUsersInfo
+sudo ./rpcenum -N -i 10.10.10.169 -e All
+```
+

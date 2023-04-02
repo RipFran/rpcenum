@@ -22,15 +22,18 @@ function ctrl_c(){
 	rm $tmp_file 2>/dev/null
 	tput cnorm; exit 1
 }
+trap sigint INT
 
 function helpPanel(){
 
 	echo -e "\n${yellowColour}[*]${endColour}${grayColour} Uso: rpcenum${endColour}"
 	echo -e "\n\t${purpleColour}e)${endColour}${yellowColour} Enumeration Mode${endColour}"
 	echo -e "\n\t\t${grayColour}DUsers${endColour}${redColour} (Domain Users)${endColour}"
-	echo -e "\t\t${grayColour}DUsersInfo${endColour}${redColour} (Domain Users with info)${endColour}"
+	echo -e "\t\t${grayColour}DUsersInfo${endColour}${redColour} (Domain Users with description info)${endColour}"
 	echo -e "\t\t${grayColour}DAUsers ${redColour}(Domain Admin Users)${endColour}"
 	echo -e "\t\t${grayColour}DGroups ${redColour}(Domain Groups)${endColour}"
+	echo -e "\t\t${grayColour}DUsersbyGroup ${redColour}(Domain Groups and their Users)${endColour}"
+	echo -e "\t\t${grayColour}DGroupsbyUser ${redColour}(Users and their Domain Groups)${endColour}"
 	echo -e "\t\t${grayColour}All ${redColour}(All Modes)${endColour}"
 	echo -e "\n\t${purpleColour}i)${endColour}${yellowColour} Host IP Address${endColour}"
 	echo -e "\n\t${purpleColour}N)${endColour}${yellowColour} Use guest session (no authentication)${endColour}"
@@ -133,21 +136,86 @@ function extract_DUsers(){
 	echo -e "\n${yellowColour}[*]${endColour}${grayColour} Enumerating Domain Users...${endColour}\n"
 	domain_users=$($1 -c "enumdomusers" | grep -oP '\[.*?\]' | grep -v 0x | tr -d '[]')
 
-	echo "Users" > $tmp_file && for user in $domain_users; do echo "$user" >> $tmp_file; done
+	# Count the total number of domain users for the progress bar
+	total_users=$(echo $domain_users | wc -w)
+
+	# Initialize the progress bar
+	progress=0
+	echo -ne "${greenColour}Progress:${endColour} ["
+
+	echo "Users" > $tmp_file && for user in $domain_users; do
+		echo "$user" >> $tmp_file
+
+		# Update the progress bar
+		progress=$((progress + 1))
+		percentage=$((progress * 100 / total_users))
+		echo -ne "\\r${greenColour}Progress:${endColour} ["
+		for i in {1..50}; do
+			if [ $((i * 2)) -le $percentage ]; then
+				echo -ne "${greenColour}#${endColour}"
+			else
+				echo -ne "-"
+			fi
+		done
+		echo -ne "] ${greenColour}$percentage%${endColour}"
+	done
+
+	# Finish the progress bar
+	echo -ne "\\r${greenColour}Progress:${endColour} ["
+	for i in {1..50}; do
+		if [ $((i * 2)) -le 100 ]; then
+			echo -ne "${greenColour}#${endColour}"
+		else
+			echo -ne "-"
+		fi
+	done
+	echo -ne "] ${greenColour}100%${endColour}\n\n"
 
 	echo -ne "${blueColour}"; printTable ' ' "$(cat $tmp_file)"; echo -ne "${endColour}"
 	rm $tmp_file 2>/dev/null
 }
 
+
 function extract_DUsers_Info(){
 
+	# Extract the domain users and count them for the progress bar
 	extract_DUsers "${1}" > /dev/null 2>&1
+	total_users=$(echo $domain_users | wc -w)
 
 	echo -e "\n${yellowColour}[*]${endColour}${grayColour} Listing domain users with description...${endColour}\n"
+
+	# Initialize the progress bar
+	progress=0
+	echo -ne "${greenColour}Progress:${endColour} ["
+
 	for user in $domain_users; do
 		$1 -c "queryuser $user" | grep -E 'User Name|Description' | cut -d ':' -f 2-100 | sed 's/\t//' | tr '\n' ',' | sed 's/.$//' >> $tmp_file
 		echo -e '\n' >> $tmp_file
+
+		# Update the progress bar
+		progress=$((progress + 1))
+		percentage=$((progress * 100 / total_users))
+		echo -ne "\\r${greenColour}Progress:${endColour} ["
+		for i in {1..50}; do
+			if [ $((i * 2)) -le $percentage ]; then
+				echo -ne "${greenColour}#${endColour}"
+			else
+				echo -ne "-"
+			fi
+		done
+		echo -ne "] ${greenColour}$percentage%${endColour}"
 	done
+
+	# Finish the progress bar
+	echo -ne "\\r${greenColour}Progress:${endColour} ["
+	for i in {1..50}; do
+		if [ $((i * 2)) -le 100 ]; then
+			echo -ne "${greenColour}#${endColour}"
+		else
+			echo -ne "-"
+		fi
+	done
+	echo -ne "] ${greenColour}100%${endColour}\n\n"
 
 	echo "User,Description" > $tmp_file2
 
@@ -162,23 +230,63 @@ function extract_DUsers_Info(){
 	rm $tmp_file 2>/dev/null
 }
 
+
 function extract_DAUsers(){
 
 	echo -e "\n${yellowColour}[*]${endColour}${grayColour} Enumerating Domain Admin Users...${endColour}\n"
 	rid_dagroup=$($1 -c "enumdomgroups" | grep "Domain Admins" | awk 'NF{print $NF}' | grep -oP '\[.*?\]' | tr -d '[]')
 	rid_dausers=$($1 -c "querygroupmem $rid_dagroup" | awk '{print $1}' | grep -oP '\[.*?\]' | tr -d '[]')
 
+	# Count the total number of domain admin users
+	total_users=$(echo $rid_dausers | wc -w)
+
+	# Initialize the progress bar
+	progress=0
+	echo -ne "${greenColour}Progress:${endColour} ["
+
 	echo "DomainAdminUsers" > $tmp_file; for da_user_rid in $rid_dausers; do
 		$1 -c "queryuser $da_user_rid" | grep 'User Name'| awk 'NF{print $NF}' >> $tmp_file
+
+		# Update the progress bar
+		progress=$((progress + 1))
+		percentage=$((progress * 100 / total_users))
+		echo -ne "\\r${greenColour}Progress:${endColour} ["
+		for i in {1..50}; do
+			if [ $((i * 2)) -le $percentage ]; then
+				echo -ne "${greenColour}#${endColour}"
+			else
+				echo -ne "-"
+			fi
+		done
+		echo -ne "] ${greenColour}$percentage%${endColour}"
 	done
+
+	# Finish the progress bar
+	echo -ne "\\r${greenColour}Progress:${endColour} ["
+	for i in {1..50}; do
+		if [ $((i * 2)) -le 100 ]; then
+			echo -ne "${greenColour}#${endColour}"
+		else
+			echo -ne "-"
+		fi
+	done
+	echo -ne "] ${greenColour}100%${endColour}\n\n"
 
 	echo -ne "${blueColour}"; printTable ' ' "$(cat $tmp_file)"; echo -ne "${endColour}"
 	rm $tmp_file 2>/dev/null
 }
 
+
 function extract_DGroups(){
 
 	echo -e "\n${yellowColour}[*]${endColour}${grayColour} Enumerating Domain Groups...${endColour}\n"
+
+	# Count the total number of domain groups
+	total_groups=$($1 -c "enumdomgroups" | grep -oP '\[.*?\]' | grep "0x" | wc -l)
+
+	# Initialize the progress bar
+	progress=0
+	echo -ne "${greenColour}Progress:${endColour} ["
 
 	$1 -c "enumdomgroups" | grep -oP '\[.*?\]' | grep "0x" | tr -d '[]' >> $tmp_file
 
@@ -189,7 +297,31 @@ function extract_DGroups(){
 		group_description=$(cat $tmp_file3 | grep "Description" | awk '{print $2}' FS=":")
 
 		echo "$(echo $group_name),$(echo $group_description)" >> $tmp_file2
+
+		# Update the progress bar
+		progress=$((progress + 1))
+		percentage=$((progress * 100 / total_groups))
+		echo -ne "\\r${greenColour}Progress:${endColour} ["
+		for i in {1..50}; do
+			if [ $((i * 2)) -le $percentage ]; then
+				echo -ne "${greenColour}#${endColour}"
+			else
+				echo -ne "-"
+			fi
+		done
+		echo -ne "] ${greenColour}$percentage%${endColour}"
 	done
+
+	# Finish the progress bar
+	echo -ne "\\r${greenColour}Progress:${endColour} ["
+	for i in {1..50}; do
+		if [ $((i * 2)) -le 100 ]; then
+			echo -ne "${greenColour}#${endColour}"
+		else
+			echo -ne "-"
+		fi
+	done
+	echo -ne "] ${greenColour}100%${endColour}\n\n"
 
 	rm $tmp_file $tmp_file3 2>/dev/null && mv $tmp_file2 $tmp_file
 	echo -ne "${blueColour}"; printTable ',' "$(cat $tmp_file)"; echo -ne "${endColour}"
@@ -201,10 +333,136 @@ function extract_All(){
 	extract_DUsers_Info "${1}"
 	extract_DAUsers "${1}"
 	extract_DGroups "${1}"
+	extract_DUsersbyGroup "${1}"
+	extract_DGroupsbyUser "${1}"
 }
 
+
+function extract_DUsersbyGroup() {
+
+    echo -e "\n${yellowColour}[*]${endColour}${grayColour} Enumerating Domain Groups and their Users...${endColour}\n"
+
+    # Count the total number of domain groups
+    total_groups=$($1 -c "enumdomgroups" | grep -oP '\[.*?\]' | grep "0x" | wc -l)
+
+    # Initialize the progress bar
+    progress=0
+    echo -ne "${greenColour}Progress:${endColour} ["
+
+    $1 -c "enumdomgroups" | grep -oP '\[.*?\]' | grep "0x" | tr -d '[]' > $tmp_file
+    echo "Domain Groups|Users" > $tmp_file2
+    cat $tmp_file | while read rid_domain_groups; do
+        group_name=$($1 -c "querygroup $rid_domain_groups" | grep 'Group Name' | cut -d ':' -f 2-)
+        rid_group_members=$($1 -c "querygroupmem $rid_domain_groups" | awk '{print $1}' | grep -oP '\[.*?\]' | tr -d '[]')
+
+        user_names=""
+        for rid_user in $rid_group_members; do
+            user_name=$($1 -c "queryuser $rid_user" | grep 'User Name' | cut -d ':' -f 2-)
+            if [[ ! $user_name =~ \$$ ]]; then # Check if user_name does not end with $
+                user_names+="$user_name, "
+            fi
+        done
+        user_names=${user_names%, }
+
+        if [ ! -z "$user_names" ]; then # Check if user_names is not empty
+            echo "$(echo $group_name)|$(echo $user_names)" >> $tmp_file2
+        fi
+
+        # Update the progress bar
+        progress=$((progress + 1))
+        percentage=$((progress * 100 / total_groups))
+        echo -ne "\\r${greenColour}Progress:${endColour} ["
+        for i in {1..50}; do
+            if [ $((i * 2)) -le $percentage ]; then
+                echo -ne "${greenColour}#${endColour}"
+            else
+                echo -ne "-"
+            fi
+        done
+        echo -ne "] ${greenColour}$percentage%${endColour}"
+    done
+
+    # Finish the progress bar
+    echo -ne "\\r${greenColour}Progress:${endColour} ["
+    for i in {1..50}; do
+        if [ $((i * 2)) -le 100 ]; then
+            echo -ne "${greenColour}#${endColour}"
+        else
+            echo -ne "-"
+        fi
+    done
+    echo -ne "] ${greenColour}100%${endColour}\n\n"
+
+    rm $tmp_file
+    mv $tmp_file2 $tmp_file
+    echo -ne "${blueColour}"; printTable '|' "$(cat $tmp_file)"; echo -ne "${endColour}"
+    rm $tmp_file 2>/dev/null
+}
+
+function extract_DGroupsbyUser() {
+
+    echo -e "\n${yellowColour}[*]${endColour}${grayColour} Enumerating Users and their Domain Groups...${endColour}\n"
+
+    # Count the total number of users
+    total_users=$($1 -c "enumdomusers" | grep -oP '\[.*?\]' | grep "0x" | wc -l)
+
+    # Initialize the progress bar
+    progress=0
+    echo -ne "${greenColour}Progress:${endColour} ["
+
+    $1 -c "enumdomusers" | grep -oP '\[.*?\]' | grep "0x" | tr -d '[]' > $tmp_file
+
+    echo "Users|Domain Groups" > $tmp_file2
+    cat $tmp_file | while read rid_user; do
+        user_name=$($1 -c "queryuser $rid_user" | grep 'User Name' | cut -d ':' -f 2-)
+        if [[ ! $user_name =~ \$$ ]]; then # Check if user_name does not end with $
+            group_rids=$($1 -c "queryusergroups $rid_user" | awk '{print $2}' | awk '{print $2}' FS=':' | tr -d '[]')
+            group_names=""
+            for rid_group in $group_rids; do
+                group_name=$($1 -c "querygroup $rid_group" | grep 'Group Name' | awk '{print $2}' FS=':')
+                group_names+="$group_name, "
+            done
+            group_names=${group_names%, }
+
+            if [ ! -z "$group_names" ]; then # Check if group_names is not empty
+                echo "$(echo $user_name)|$(echo $group_names)" >> $tmp_file2
+            fi
+        fi
+
+        # Update the progress bar
+        progress=$((progress + 1))
+        percentage=$((progress * 100 / total_users))
+        echo -ne "\\r${greenColour}Progress:${endColour} ["
+        for i in {1..50}; do
+            if [ $((i * 2)) -le $percentage ]; then
+                echo -ne "${greenColour}#${endColour}"
+            else
+                echo -ne "-"
+            fi
+        done
+        echo -ne "] ${greenColour}$percentage%${endColour}"
+    done
+
+    # Finish the progress bar
+    echo -ne "\\r${greenColour}Progress:${endColour} ["
+    for i in {1..50}; do
+        if [ $((i * 2)) -le 100 ]; then
+            echo -ne "${greenColour}#${endColour}"
+        else
+            echo -ne "-"
+        fi
+    done
+    echo -ne "] ${greenColour}100%${endColour}\n\n"
+
+    rm $tmp_file
+    mv $tmp_file2 $tmp_file
+    echo -ne "${blueColour}"; printTable '|' "$(cat $tmp_file)"; echo -ne "${endColour}"
+    rm $tmp_file 2>/dev/null
+}
+
+
 function beginEnumeration() {
-    #tput civis
+    tput civis
     
     if [[ "${use_guest_session}" == "true" ]]; then
         rpcclient_cmd="rpcclient -U '' ${host_ip} -N"
@@ -230,6 +488,12 @@ function beginEnumeration() {
                 DGroups)
                     extract_DGroups "${rpcclient_cmd}"
                     ;;
+				DUsersbyGroup)
+					extract_DUsersbyGroup "${rpcclient_cmd}"
+					;;
+				DGroupsbyUser)
+					extract_DGroupsbyUser "${rpcclient_cmd}"
+					;;
                 All)
                     extract_All "${rpcclient_cmd}"
                     ;;
