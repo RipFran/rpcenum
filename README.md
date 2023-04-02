@@ -4,11 +4,9 @@ Rpcenum es una herramienta de línea de comandos, originalmente desarrollada por
 
 En su versión original, permitía la enumeración utilizando un *Null Session* (sin autenticación) si la máquina objetivo lo permitía. Sin embargo, se ha ampliado su funcionamiento para **incluir la autenticación mediante credenciales** de usuario válidas, proporcionando así una mayor flexibilidad y capacidad de adaptación a diferentes entornos y restricciones de seguridad implementadas en los sistemas que se están examinando.
 
-Además de las funcionalidades descritas anteriormente, Rpcenum también ha sido actualizada con nuevas características. En particular, se han añadido **barras de progreso** para todos los modos de enumeración, lo que puede ayudar a los usuarios a estimar mejor el tiempo necesario para completar el proceso y a tener una idea de cómo avanza la enumeración en tiempo real.
+Además de las funcionalidades descritas anteriormente, rpcenum también ha sido actualizada con nuevas características. En particular, se han añadido **barras de progreso** para todos los modos de enumeración.
 
-Además, se han agregado dos nuevos modos de enumeración: **DUsersbyGroup** y **DGroupsbyUser**. **El primero** de ellos muestra los **grupos del dominio y los usuarios** que pertenecen a cada uno de ellos.
-
-Por otro lado, el segundo modo, **DGroupsbyUser**, muestra los **usuarios y los grupos a los que pertenecen**, lo que puede ser de ayuda para analizar cómo se han organizado los usuarios en diferentes grupos y cómo se han establecido los permisos y las políticas de seguridad en el sistema.
+Además, se han agregado dos nuevos modos de enumeración: **DUsersbyGroup** y **DGroupsbyUser**. **El primero** de ellos muestra los **grupos del dominio y los usuarios** que pertenecen a cada uno de ellos. Por otro lado, el segundo modo, **DGroupsbyUser**, muestra los **usuarios y los grupos a los que pertenecen**
 
 Esta utilidad nos **permitirá obtener la siguiente información** de un dominio:
 
