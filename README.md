@@ -1,8 +1,8 @@
 # RPCenum
 
-Herramienta en Bash ideal para efectuar una enumeración básica y extraer la información más relevante de un dominio vía rpcclient. 
+Rpcenum es una herramienta de línea de comandos que permite la enumeración de información de dominio en sistemas Windows mediante el protocolo RPC (Remote Procedure Call). La enumeración se puede llevar a cabo expleando una sesión de invitado, si la máquina objetivo permite este tipo de conexión, o mediante la autenticación con credenciales de usuario válidas. Esto proporciona flexibilidad en función de las restricciones de seguridad implementadas en el sistema que se está examinando.
 
-Esta utilidad nos permitirá obtener la siguiente información de un dominio:
+Esta utilidad nos **permitirá obtener la siguiente información** de un dominio:
 
 * Usuarios del dominio
 * Usuarios del dominio con información
@@ -11,17 +11,28 @@ Esta utilidad nos permitirá obtener la siguiente información de un dominio:
 
 ¿Cómo funciona?
 ======
+
 La ejecución de la herramienta mostrará el siguiente panel de ayuda:
 
 <p align="center">
-	<img src="images/image1.png"
+	<img src="Images/image1.png"
 		alt="Panel de ayuda"
 	style="float: left; margin-right: 10px;" />
 </p>
 
-Para su correcta ejecución, es necesario especificar el modo de enumeración a usar, siendo los representados en la imagen adjunta.
 
-El modo de enumeración **DUsers**, nos permitirá obtener un listado de los usuarios existentes en el dominio (siempre y cuando el **Null Session** esté habilitado):
+
+Su **funcionamiento** es el siguiente:
+
+* **Modo** de enumeración (opción -e): Se debe proporcionar el modo de enumeración que se desee utilizar.
+* Dirección **IP** del host (opción -i): Proporciona la dirección IP del host que deseas enumerar.
+* Uso de sesión de **invitado** **o autenticación** (opciones -N, -u, y -p):
+	* Para utilizar una sesión de invitado (sin autenticación), utiliza la opción -N.
+	* Si deseas usar credenciales de usuario, proporciona el nombre de usuario con la opción -u y la contraseña con la opción -p.
+
+La herramienta verifica que se haya proporcionado la dirección IP del host y el modo de enumeración. Además, comprueba si se ha especificado una sesión de invitado o se han proporcionado credenciales de usuario válidas.
+
+El modo de enumeración **DUsers**, nos permitirá obtener un listado de los usuarios existentes en el dominio. En este caso nos conectaremos al servicio utilizando las credenciales de dominio *fcarot%Password1*:
 
 <p align="center">
 	<img src="images/image2.png"
@@ -29,7 +40,7 @@ El modo de enumeración **DUsers**, nos permitirá obtener un listado de los usu
 	style="float: left; margin-right: 10px;" />
 </p>
 
-El modo de enumeración **DUsersInfo**, nos permitirá obtener un listado de los usuarios existentes en el dominio con descripción (siempre y cuando el **Null Session** esté habilitado), pudiendo así identificar a usuarios potenciales:
+El modo de enumeración **DUsersInfo**, nos permitirá obtener un listado de los usuarios existentes en el dominio con descripción, pudiendo así identificar a usuarios potenciales:
 
 <p align="center">
     <img src="images/image3.png"
@@ -37,7 +48,7 @@ El modo de enumeración **DUsersInfo**, nos permitirá obtener un listado de los
     style="float: left; margin-right: 10px;" />
 </p>
 
-El modo de enumeración **DAUsers**, nos permitirá obtener un listado de los usuarios existentes administradores del dominio (siempre y cuando el **Null Session** esté habilitado). Esta parte es crucial, puesto que el atacante siempre va a ir en busca de las credenciales de estos, dado que poseen privilegio total sobre el dominio.
+El modo de enumeración **DAUsers**, nos permitirá obtener un listado de los usuarios existentes administradores del dominio. Esta parte es crucial, puesto que el atacante siempre va a ir en busca de las credenciales de estos, dado que poseen privilegio total sobre el dominio.
 
 <p align="center">
     <img src="images/image4.png"
@@ -45,7 +56,7 @@ El modo de enumeración **DAUsers**, nos permitirá obtener un listado de los us
     style="float: left; margin-right: 10px;" />
 </p>
 
-El modo de enumeración **DGroups**, nos permitirá obtener un listado de los grupos existentes del dominio (siempre y cuando el **Null Session** esté habilitado).
+El modo de enumeración **DGroups**, nos permitirá obtener un listado de los grupos existentes del dominio.
 
 <p align="center">
     <img src="images/image5.png"
@@ -54,5 +65,3 @@ El modo de enumeración **DGroups**, nos permitirá obtener un listado de los gr
 </p>
 
 Por último, el modo de enumeración **All**, nos efectuará todas las enumeraciones de forma simultánea, pudiendo así visualizar la información más relevante del dominio.
-
-**ANOTACIÓN**: Es posible que se añadan nuevas opciones a la herramienta.
