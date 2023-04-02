@@ -1,6 +1,6 @@
 # RPCenum
 
-Rpcenum es una herramienta de línea de comandos que permite la enumeración de información de dominio en sistemas Windows mediante el protocolo RPC (Remote Procedure Call). La enumeración se puede llevar a cabo expleando una sesión de invitado, si la máquina objetivo permite este tipo de conexión, o mediante la autenticación con credenciales de usuario válidas. Esto proporciona flexibilidad en función de las restricciones de seguridad implementadas en el sistema que se está examinando.
+Rpcenum es una herramienta de línea de comandos, originalmente desarrollada por s4vitar, que permite la **enumeración de información de dominio** en sistemas Windows **mediante** el protocolo **RPC** (Remote Procedure Call). En su versión original, permitía la enumeración utilizando una sesión de invitado si la máquina objetivo lo permitía. Sin embargo, se ha ampliado su funcionamiento para incluir la autenticación mediante credenciales de usuario válidas, proporcionando así una mayor flexibilidad y capacidad de adaptación a diferentes entornos y restricciones de seguridad implementadas en los sistemas que se están examinando.
 
 Esta utilidad nos **permitirá obtener la siguiente información** de un dominio:
 
@@ -15,7 +15,7 @@ Esta utilidad nos **permitirá obtener la siguiente información** de un dominio
 La ejecución de la herramienta mostrará el siguiente panel de ayuda:
 
 <p align="center">
-	<img src="Images/image1.png"
+	<img src="images/image1.png"
 		alt="Panel de ayuda"
 	style="float: left; margin-right: 10px;" />
 </p>
@@ -32,7 +32,7 @@ Su **funcionamiento** es el siguiente:
 
 La herramienta verifica que se haya proporcionado la dirección IP del host y el modo de enumeración. Además, comprueba si se ha especificado una sesión de invitado o se han proporcionado credenciales de usuario válidas.
 
-El modo de enumeración **DUsers**, nos permitirá obtener un listado de los usuarios existentes en el dominio. En este caso nos conectaremos al servicio utilizando las credenciales de dominio *fcarot%Password1*:
+El modo de enumeración **DUsers**, nos permitirá obtener un listado de los usuarios existentes en el dominio. En este caso nos conectaremos al servicio utilizando las credenciales de dominio *fcarot:Password1*:
 
 <p align="center">
 	<img src="images/image2.png"
