@@ -1,6 +1,8 @@
 # RPCenum
 
-Rpcenum es una herramienta de línea de comandos, originalmente desarrollada por s4vitar, que permite la **enumeración de información de dominio** en sistemas Windows **mediante** el protocolo **RPC** (Remote Procedure Call). En su versión original, permitía la enumeración utilizando una sesión de invitado si la máquina objetivo lo permitía. Sin embargo, se ha ampliado su funcionamiento para incluir la autenticación mediante credenciales de usuario válidas, proporcionando así una mayor flexibilidad y capacidad de adaptación a diferentes entornos y restricciones de seguridad implementadas en los sistemas que se están examinando.
+Rpcenum es una herramienta de línea de comandos, originalmente desarrollada por s4vitar, que permite la **enumeración de información de dominio** en sistemas Windows **mediante** el protocolo **RPC** (Remote Procedure Call). 
+
+En su versión original, permitía la enumeración utilizando una sesión de invitado si la máquina objetivo lo permitía. Sin embargo, se ha ampliado su funcionamiento para incluir la autenticación mediante credenciales de usuario válidas, proporcionando así una mayor flexibilidad y capacidad de adaptación a diferentes entornos y restricciones de seguridad implementadas en los sistemas que se están examinando.
 
 Esta utilidad nos **permitirá obtener la siguiente información** de un dominio:
 
