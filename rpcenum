@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Author: Marcelo Vázquez (aka S4vitar)
+# Author: Marcelo Vázquez (aka S4vitar) & R1pFr4n
 
 #Colours
 greenColour="\e[0;32m\033[1m"
@@ -33,6 +33,9 @@ function helpPanel(){
 	echo -e "\t\t${grayColour}DGroups ${redColour}(Domain Groups)${endColour}"
 	echo -e "\t\t${grayColour}All ${redColour}(All Modes)${endColour}"
 	echo -e "\n\t${purpleColour}i)${endColour}${yellowColour} Host IP Address${endColour}"
+	echo -e "\n\t${purpleColour}N)${endColour}${yellowColour} Use guest session (no authentication)${endColour}"
+	echo -e "\n\t${purpleColour}u)${endColour}${yellowColour} Username${endColour}"
+	echo -e "\n\t${purpleColour}p)${endColour}${yellowColour} Password${endColour}"
 	echo -e "\n\t${purpleColour}h)${endColour}${yellowColour} Show this help pannel${endColour}"
 	exit 1
 }
@@ -128,7 +131,7 @@ function trimString(){
 function extract_DUsers(){
 
 	echo -e "\n${yellowColour}[*]${endColour}${grayColour} Enumerating Domain Users...${endColour}\n"
-	domain_users=$(rpcclient -U "" $1 -c "enumdomusers" -N | grep -oP '\[.*?\]' | grep -v 0x | tr -d '[]')
+	domain_users=$($1 -c "enumdomusers" | grep -oP '\[.*?\]' | grep -v 0x | tr -d '[]')
 
 	echo "Users" > $tmp_file && for user in $domain_users; do echo "$user" >> $tmp_file; done
 
@@ -138,12 +141,11 @@ function extract_DUsers(){
 
 function extract_DUsers_Info(){
 
-	extract_DUsers $1 > /dev/null 2>&1
+	extract_DUsers "${1}" > /dev/null 2>&1
 
 	echo -e "\n${yellowColour}[*]${endColour}${grayColour} Listing domain users with description...${endColour}\n"
-
 	for user in $domain_users; do
-		rpcclient -U "" $1 -c "queryuser $user" -N | grep -E 'User Name|Description' | cut -d ':' -f 2-100 | sed 's/\t//' | tr '\n' ',' | sed 's/.$//' >> $tmp_file
+		$1 -c "queryuser $user" | grep -E 'User Name|Description' | cut -d ':' -f 2-100 | sed 's/\t//' | tr '\n' ',' | sed 's/.$//' >> $tmp_file
 		echo -e '\n' >> $tmp_file
 	done
 
@@ -163,11 +165,11 @@ function extract_DUsers_Info(){
 function extract_DAUsers(){
 
 	echo -e "\n${yellowColour}[*]${endColour}${grayColour} Enumerating Domain Admin Users...${endColour}\n"
-	rid_dagroup=$(rpcclient -U "" $1 -c "enumdomgroups" -N | grep "Domain Admins" | awk 'NF{print $NF}' | grep -oP '\[.*?\]' | tr -d '[]')
-	rid_dausers=$(rpcclient -U "" $1 -c "querygroupmem $rid_dagroup" -N | awk '{print $1}' | grep -oP '\[.*?\]' | tr -d '[]')
+	rid_dagroup=$($1 -c "enumdomgroups" | grep "Domain Admins" | awk 'NF{print $NF}' | grep -oP '\[.*?\]' | tr -d '[]')
+	rid_dausers=$($1 -c "querygroupmem $rid_dagroup" | awk '{print $1}' | grep -oP '\[.*?\]' | tr -d '[]')
 
 	echo "DomainAdminUsers" > $tmp_file; for da_user_rid in $rid_dausers; do
-		rpcclient -U "" $1 -c "queryuser $da_user_rid" -N | grep 'User Name'| awk 'NF{print $NF}' >> $tmp_file
+		$1 -c "queryuser $da_user_rid" | grep 'User Name'| awk 'NF{print $NF}' >> $tmp_file
 	done
 
 	echo -ne "${blueColour}"; printTable ' ' "$(cat $tmp_file)"; echo -ne "${endColour}"
@@ -178,11 +180,11 @@ function extract_DGroups(){
 
 	echo -e "\n${yellowColour}[*]${endColour}${grayColour} Enumerating Domain Groups...${endColour}\n"
 
-	rpcclient -U "" $host_ip -c "enumdomgroups" -N | grep -oP '\[.*?\]' | grep "0x" | tr -d '[]' >> $tmp_file
+	$1 -c "enumdomgroups" | grep -oP '\[.*?\]' | grep "0x" | tr -d '[]' >> $tmp_file
 
 	echo "DomainGroup,Description" > $tmp_file2
 	cat $tmp_file | while read rid_domain_groups; do
-		rpcclient -U "" $host_ip -c "querygroup $rid_domain_groups" -N | grep -E 'Group Name|Description' | sed 's/\t//' > $tmp_file3
+		$1 -c "querygroup $rid_domain_groups" | grep -E 'Group Name|Description' | sed 's/\t//' > $tmp_file3
 		group_name=$(cat $tmp_file3 | grep "Group Name" | awk '{print $2}' FS=":")
 		group_description=$(cat $tmp_file3 | grep "Description" | awk '{print $2}' FS=":")
 
@@ -195,68 +197,124 @@ function extract_DGroups(){
 }
 
 function extract_All(){
-	extract_DUsers $1
-	extract_DUsers_Info $1
-	extract_DAUsers $1
-	extract_DGroups $1
+	extract_DUsers "${1}"
+	extract_DUsers_Info "${1}"
+	extract_DAUsers "${1}"
+	extract_DGroups "${1}"
 }
 
-function beginEnumeration(){
+function beginEnumeration() {
+    #tput civis
+    
+    if [[ "${use_guest_session}" == "true" ]]; then
+        rpcclient_cmd="rpcclient -U '' ${host_ip} -N"
+    else
+        rpcclient_cmd="rpcclient -U ${username}%${password} ${host_ip}"
+    fi
 
-	tput civis; nmap -p139 --open -T5 -v -n $host_ip | grep open > /dev/null 2>&1 && port_status=$?
-	rpcclient -U "" $host_ip -c "enumdomusers" -N > /dev/null 2>&1
+    nmap -p139 --open -T5 -v -n ${host_ip} | grep open > /dev/null 2>&1 && port_status=$?
+    ${rpcclient_cmd} -c "enumdomusers" > /dev/null 2>&1
 
-	if [ "$(echo $?)" == "0" ]; then
-		if [ "$port_status" == "0" ]; then
-			case $enum_mode in
-				DUsers)
-					extract_DUsers $host_ip
-					;;
-				DUsersInfo)
-					extract_DUsers_Info $host_ip
-					;;
-				DAUsers)
-					extract_DAUsers $host_ip
-					;;
-				DGroups)
-					extract_DGroups $host_ip
-					;;
-				All)
-					extract_All $host_ip
-					;;
-				*)
-					echo -e "\n${redColour}[!] Opción no válida${endColour}"
-					helpPanel
-					exit 1
-					;;
-			esac
-		else
-			echo -e "\n${redColour}Port 139 seems to be closed on $host_ip${endColour}"
-			tput cnorm; exit 0
-		fi
-	else
-		echo -e "\n${redColour}[!] Error: Access Denied${endColour}"
-		tput cnorm; exit 0
-	fi
+    if [[ "$(echo $?)" == "0" ]]; then
+        if [[ "${port_status}" == "0" ]]; then
+            case "${enum_mode}" in
+                DUsers)
+                    extract_DUsers "${rpcclient_cmd}"
+                    ;;
+                DUsersInfo)
+                    extract_DUsers_Info "${rpcclient_cmd}"
+                    ;;
+                DAUsers)
+                    extract_DAUsers "${rpcclient_cmd}"
+                    ;;
+                DGroups)
+                    extract_DGroups "${rpcclient_cmd}"
+                    ;;
+                All)
+                    extract_All "${rpcclient_cmd}"
+                    ;;
+                *)
+                    echo -e "\n${redColour}[!] Opción no válida: ${enum_mode}${endColour}\n"
+                    helpPanel
+                    exit 1
+                    ;;
+            esac
+        else
+            echo -e "\n${redColour}[!] El puerto 139 parece estar cerrado en ${host_ip}${endColour}\n"
+            tput cnorm
+            exit 0
+        fi
+    else
+        echo -e "\n${redColour}[!] Error: Acceso denegado${endColour}\n"
+        tput cnorm
+        exit 0
+    fi
+
+    tput cnorm
 }
 
 # Main Function
 
 if [ "$(echo $UID)" == "0" ]; then
-	declare -i parameter_counter=0; while getopts ":e:i:h:" arg; do
-		case $arg in
-			e) enum_mode=$OPTARG; let parameter_counter+=1;;
-			i) host_ip=$OPTARG; let parameter_counter+=1;;
-			h) helpPanel;;
+
+	guest_session=false
+
+	while getopts ":e:i:u:p:Nh" opt; do
+		case ${opt} in
+			e)
+				enum_mode="${OPTARG}"
+				;;
+			i)
+				host_ip="${OPTARG}"
+				;;
+			u)
+				username="${OPTARG}"
+				;;
+			p)
+				password="${OPTARG}"
+				;;
+			N)
+				guest_session=true
+				;;
+			h)
+				helpPanel
+				;;
+			\?)
+				echo -e "\n${redColour}[!] Opción inválida: -$OPTARG${endColour}\n"
+				helpPanel
+				exit 1
+				;;
+			:)
+				echo -e "\n${redColour}[!] Opción -$OPTARG requiere un argumento.${endColour}\n"
+				helpPanel
+				exit 1
+				;;
 		esac
 	done
 
-	if [ $parameter_counter -ne 2 ]; then
+	# Verificar si se proporcionó la dirección IP del host
+	if [[ -z "${host_ip}" ]]; then
+		echo -e "\n${redColour}[!] Es necesario proporcionar la dirección IP del host a enumerar.${endColour}\n"
 		helpPanel
-	else
-		beginEnumeration
-		tput cnorm
+		exit 1
 	fi
+
+	# Verificar si se proporcionó el modo de enumeración
+	if [[ -z "${enum_mode}" ]]; then
+		echo -e "\n${redColour}[!] Es necesario proporcionar el modo de enumeración.${endColour}\n"
+		helpPanel
+		exit 1
+	fi
+
+	# Comprobar si se ha especificado una sesión de invitado o credenciales de usuario
+    if [ "$guest_session" = false ] && [ -z "$username" -o -z "$password" ]; then
+        echo -e "\n${redColour}[!] Debe especificar una sesión de invitado (-N) o proporcionar un nombre de usuario y contraseña (-u y -p).${endColour}\n"
+        helpPanel
+        exit 1
+    fi
+
+	# Comenzar la enumeración
+	beginEnumeration
 else
 	echo -e "\n${redColour}[*] It is necessary to run the program as root${endColour}\n"
 fi
