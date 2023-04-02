@@ -12,8 +12,8 @@ Esta utilidad nos **permitirá obtener la siguiente información** de un dominio
 * Usuarios del dominio con información
 * Usuarios administradores del dominio
 * Grupos del dominio
-* Grupos del dominio y usuarios que pertenecen a ellos.
-* Usuarios del dominio y grupos a los que pretenecen.
+* Grupos del dominio y usuarios que pertenecen a ellos
+* Usuarios del dominio y grupos a los que pretenecen
 
 ¿Cómo funciona?
 ======
