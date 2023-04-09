@@ -134,7 +134,7 @@ function trimString(){
 function extract_DUsers(){
 
 	echo -e "\n${yellowColour}[*]${endColour}${grayColour} Enumerating Domain Users...${endColour}\n"
-	domain_users=$($1 -c "enumdomusers" | grep -oP '\[.*?\]' | grep -v 0x | tr -d '[]')
+	domain_users=$(eval "$1 -c enumdomusers | grep -oP '\[.*?\]' | grep -v 0x | tr -d '[]'")
 
 	# Count the total number of domain users for the progress bar
 	total_users=$(echo $domain_users | wc -w)
@@ -189,7 +189,7 @@ function extract_DUsers_Info(){
 	echo -ne "${greenColour}Progress:${endColour} ["
 
 	for user in $domain_users; do
-		$1 -c "queryuser $user" | grep -E 'User Name|Description' | cut -d ':' -f 2-100 | sed 's/\t//' | tr '\n' ',' | sed 's/.$//' >> $tmp_file
+		eval "$1 -c \"queryuser $user\" | grep -E 'User Name|Description' | cut -d ':' -f 2-100 | sed 's/\t//' | tr '\n' ',' | sed 's/.$//' >> $tmp_file"
 		echo -e '\n' >> $tmp_file
 
 		# Update the progress bar
@@ -234,8 +234,8 @@ function extract_DUsers_Info(){
 function extract_DAUsers(){
 
 	echo -e "\n${yellowColour}[*]${endColour}${grayColour} Enumerating Domain Admin Users...${endColour}\n"
-	rid_dagroup=$($1 -c "enumdomgroups" | grep "Domain Admins" | awk 'NF{print $NF}' | grep -oP '\[.*?\]' | tr -d '[]')
-	rid_dausers=$($1 -c "querygroupmem $rid_dagroup" | awk '{print $1}' | grep -oP '\[.*?\]' | tr -d '[]')
+	rid_dagroup=$(eval "$1 -c enumdomgroups" | grep "Domain Admins" | awk 'NF{print $NF}' | grep -oP '\[.*?\]' | tr -d '[]')
+	rid_dausers=$(eval "$1 -c \"querygroupmem $rid_dagroup\"" | awk '{print $1}' | grep -oP '\[.*?\]' | tr -d '[]')
 
 	# Count the total number of domain admin users
 	total_users=$(echo $rid_dausers | wc -w)
@@ -245,7 +245,7 @@ function extract_DAUsers(){
 	echo -ne "${greenColour}Progress:${endColour} ["
 
 	echo "DomainAdminUsers" > $tmp_file; for da_user_rid in $rid_dausers; do
-		$1 -c "queryuser $da_user_rid" | grep 'User Name'| awk 'NF{print $NF}' >> $tmp_file
+		eval "$1 -c \"queryuser $da_user_rid\"" | grep 'User Name'| awk 'NF{print $NF}' >> $tmp_file
 
 		# Update the progress bar
 		progress=$((progress + 1))
@@ -282,17 +282,17 @@ function extract_DGroups(){
 	echo -e "\n${yellowColour}[*]${endColour}${grayColour} Enumerating Domain Groups...${endColour}\n"
 
 	# Count the total number of domain groups
-	total_groups=$($1 -c "enumdomgroups" | grep -oP '\[.*?\]' | grep "0x" | wc -l)
+	total_groups=$(eval "$1 -c enumdomgroups" | grep -oP '\[.*?\]' | grep "0x" | wc -l)
 
 	# Initialize the progress bar
 	progress=0
 	echo -ne "${greenColour}Progress:${endColour} ["
 
-	$1 -c "enumdomgroups" | grep -oP '\[.*?\]' | grep "0x" | tr -d '[]' >> $tmp_file
+	eval "$1 -c enumdomgroups" | grep -oP '\[.*?\]' | grep "0x" | tr -d '[]' >> $tmp_file
 
 	echo "DomainGroup,Description" > $tmp_file2
 	cat $tmp_file | while read rid_domain_groups; do
-		$1 -c "querygroup $rid_domain_groups" | grep -E 'Group Name|Description' | sed 's/\t//' > $tmp_file3
+		eval "$1 -c \"querygroup $rid_domain_groups\"" | grep -E 'Group Name|Description' | sed 's/\t//' > $tmp_file3
 		group_name=$(cat $tmp_file3 | grep "Group Name" | awk '{print $2}' FS=":")
 		group_description=$(cat $tmp_file3 | grep "Description" | awk '{print $2}' FS=":")
 
@@ -343,21 +343,21 @@ function extract_DUsersbyGroup() {
     echo -e "\n${yellowColour}[*]${endColour}${grayColour} Enumerating Domain Groups and their Users...${endColour}\n"
 
     # Count the total number of domain groups
-    total_groups=$($1 -c "enumdomgroups" | grep -oP '\[.*?\]' | grep "0x" | wc -l)
+    total_groups=$(eval "$1 -c enumdomgroups" | grep -oP '\[.*?\]' | grep "0x" | wc -l)
 
     # Initialize the progress bar
     progress=0
     echo -ne "${greenColour}Progress:${endColour} ["
 
-    $1 -c "enumdomgroups" | grep -oP '\[.*?\]' | grep "0x" | tr -d '[]' > $tmp_file
+    eval "$1 -c enumdomgroups" | grep -oP '\[.*?\]' | grep "0x" | tr -d '[]' > $tmp_file
     echo "Domain Groups|Users" > $tmp_file2
     cat $tmp_file | while read rid_domain_groups; do
-        group_name=$($1 -c "querygroup $rid_domain_groups" | grep 'Group Name' | cut -d ':' -f 2-)
-        rid_group_members=$($1 -c "querygroupmem $rid_domain_groups" | awk '{print $1}' | grep -oP '\[.*?\]' | tr -d '[]')
+        group_name=$(eval "$1 -c \"querygroup $rid_domain_groups\"" | grep 'Group Name' | cut -d ':' -f 2-)
+        rid_group_members=$(eval "$1 -c \"querygroupmem $rid_domain_groups\"" | awk '{print $1}' | grep -oP '\[.*?\]' | tr -d '[]')
 
         user_names=""
         for rid_user in $rid_group_members; do
-            user_name=$($1 -c "queryuser $rid_user" | grep 'User Name' | cut -d ':' -f 2-)
+            user_name=$(eval "$1 -c \"queryuser $rid_user\"" | grep 'User Name' | cut -d ':' -f 2-)
             if [[ ! $user_name =~ \$$ ]]; then # Check if user_name does not end with $
                 user_names+="$user_name, "
             fi
@@ -404,22 +404,22 @@ function extract_DGroupsbyUser() {
     echo -e "\n${yellowColour}[*]${endColour}${grayColour} Enumerating Users and their Domain Groups...${endColour}\n"
 
     # Count the total number of users
-    total_users=$($1 -c "enumdomusers" | grep -oP '\[.*?\]' | grep "0x" | wc -l)
+    total_users=$(eval "$1 -c enumdomusers" | grep -oP '\[.*?\]' | grep "0x" | wc -l)
 
     # Initialize the progress bar
     progress=0
     echo -ne "${greenColour}Progress:${endColour} ["
 
-    $1 -c "enumdomusers" | grep -oP '\[.*?\]' | grep "0x" | tr -d '[]' > $tmp_file
+    eval "$1 -c enumdomusers" | grep -oP '\[.*?\]' | grep "0x" | tr -d '[]' > $tmp_file
 
     echo "Users|Domain Groups" > $tmp_file2
     cat $tmp_file | while read rid_user; do
-        user_name=$($1 -c "queryuser $rid_user" | grep 'User Name' | cut -d ':' -f 2-)
+        user_name=$(eval "$1 -c \"queryuser $rid_user\"" | grep 'User Name' | cut -d ':' -f 2-)
         if [[ ! $user_name =~ \$$ ]]; then # Check if user_name does not end with $
-            group_rids=$($1 -c "queryusergroups $rid_user" | awk '{print $2}' | awk '{print $2}' FS=':' | tr -d '[]')
+            group_rids=$(eval "$1 -c \"queryusergroups $rid_user\"" | awk '{print $2}' | awk '{print $2}' FS=':' | tr -d '[]')
             group_names=""
             for rid_group in $group_rids; do
-                group_name=$($1 -c "querygroup $rid_group" | grep 'Group Name' | awk '{print $2}' FS=':')
+                group_name=$(eval "$1 -c \"querygroup $rid_group\"" | grep 'Group Name' | awk '{print $2}' FS=':')
                 group_names+="$group_name, "
             done
             group_names=${group_names%, }
@@ -464,16 +464,15 @@ function extract_DGroupsbyUser() {
 function beginEnumeration() {
     tput civis
     
-    if [[ "${use_guest_session}" == "true" ]]; then
-        rpcclient_cmd="rpcclient -U '' ${host_ip} -N"
+    if [[ "${guest_session}" == "true" ]]; then
+        rpcclient_cmd="rpcclient -U \"\" -N ${host_ip}"
     else
         rpcclient_cmd="rpcclient -U ${username}%${password} ${host_ip}"
     fi
 
     nmap -p139 --open -T5 -v -n ${host_ip} | grep open > /dev/null 2>&1 && port_status=$?
-    ${rpcclient_cmd} -c "enumdomusers" > /dev/null 2>&1
 
-    if [[ "$(echo $?)" == "0" ]]; then
+    if eval "${rpcclient_cmd} -c enumdomusers" > /dev/null 2>&1; then
         if [[ "${port_status}" == "0" ]]; then
             case "${enum_mode}" in
                 DUsers)
