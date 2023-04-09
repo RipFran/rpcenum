@@ -469,7 +469,8 @@ function beginEnumeration() {
     else
         rpcclient_cmd="rpcclient -U ${username}%${password} ${host_ip}"
     fi
-
+    
+    trap ctrl_c INT
     nmap -p139 --open -T5 -v -n ${host_ip} | grep open > /dev/null 2>&1 && port_status=$?
 
     if eval "${rpcclient_cmd} -c enumdomusers" > /dev/null 2>&1; then
