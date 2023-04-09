@@ -22,7 +22,7 @@ function ctrl_c(){
 	rm $tmp_file 2>/dev/null
 	tput cnorm; exit 1
 }
-trap sigint INT
+trap ctrl_c INT
 
 function helpPanel(){
 
