@@ -1,4 +1,4 @@
-# RPCenum
+# RPCenum Enhanced Features
 
 Rpcenum es una herramienta de línea de comandos, originalmente desarrollada por s4vitar, que permite la **enumeración de información de dominio** en sistemas Windows **mediante** el protocolo **RPC** (Remote Procedure Call). 
 
